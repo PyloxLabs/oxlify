@@ -1,49 +1,78 @@
-# oxlify documentation site
+<div align="center">
 
-Static documentation for the `oxlify` node daemon, built with TypeScript and Vite.
+<img src="banner.png" alt="oxlify" />
+
+# oxlify
+
+**A per-node game server daemon, written from scratch in Crystal.**
+
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-ff5a2c?style=flat-square&labelColor=0b0b0d)](LICENSE)
+[![Crystal 1.9+](https://img.shields.io/badge/crystal-1.9%2B-000000?style=flat-square&labelColor=0b0b0d&logo=crystal&logoColor=white)](https://crystal-lang.org)
+![Runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-none-ff5a2c?style=flat-square&labelColor=0b0b0d)
+![Platform: Linux](https://img.shields.io/badge/platform-linux-ff5a2c?style=flat-square&labelColor=0b0b0d&logo=linux&logoColor=white)
+
+</div>
+
+## What it is
+
+oxlify is a per-node game server daemon written from scratch in Crystal. It is a drop-in
+replacement for the panel's Node.js daemon: the same HTTP and WebSocket contract, the same
+wings-style data layout, and the same expectations about how a panel talks to a node. Nothing is
+shared with Pterodactyl or Wings.
+
+It is the node daemon for **pyloxdactyl**, the only officially supported panel. Other open-source
+panel projects and forks are not supported.
+
+The daemon links only the Crystal standard library — no shards and no web framework — and talks to
+Docker over `/var/run/docker.sock`.
+
+## Features
+
+- Server lifecycle with Wings-style semantics, and a create call that is safe to repeat
+- Live console over WebSocket, buffered and throttled before it is fanned out
+- Graceful stop, and a `starting` state driven by the egg's startup line
+- File manager, backups and archive handling confined to a single server volume
+- SFTP through a small libssh helper that `chroot`s every session
+- Memory, CPU and disk limits, with disk accounting cached for fast panels
+- Host reporting for total memory, CPU count and disk
+
+## Supported operating systems
+
+Any modern, 64-bit Linux distribution with `systemd` and a Docker Engine build works. These are
+the distributions oxlify is developed and tested against:
+
+| Distribution | Versions | Status |
+| --- | --- | --- |
+| Ubuntu LTS | 22.04, 24.04 | Tested |
+| Ubuntu derivatives | Linux Mint 21/22, Pop!_OS, Zorin, elementary | Tested |
+| Debian | 11 (Bullseye), 12 (Bookworm), 13 (Trixie) | Tested |
+| Rocky Linux / AlmaLinux | 9 | Supported |
+| Fedora | 39 and newer | Supported |
+| Arch Linux / Manjaro | Rolling | Supported |
+| openSUSE | Leap 15.5+ | Supported |
+
+**Not supported**
+
+- **Windows and macOS** — the daemon needs Docker's Unix socket and `chroot` for SFTP.
+- **WSL2 as a node** — Docker networking and `chroot` confinement are not suitable for production
+  game servers.
+- **Rootless-only Docker** — unless you point the daemon at the rootless socket and accept that
+  SFTP `chroot` needs root.
 
 ## Requirements
 
-- Node.js 20 or newer
-- npm 10 or newer
+| | |
+| --- | --- |
+| Architecture | `x86_64`, or `arm64` when the images you run match the node |
+| Docker Engine | 20.10 or newer; 24.0+ recommended, reachable at `/var/run/docker.sock` |
+| Init system | `systemd` |
+| `libssh` runtime | required by the optional `oxlify-sftp` helper |
+| Privileges | root — needed for the Docker socket, volume ownership and SFTP `chroot` |
+| Crystal (to build) | `>= 1.9` |
 
-## Commands
+The daemon itself is tiny — a few megabytes of memory and almost no CPU. Size the node for the
+game servers it will host rather than for oxlify.
 
-```bash
-npm install
-npm run dev
-npm run build
-npm run preview
-```
+## License
 
-`npm run dev` starts a local server with hot reload. `npm run build` type-checks with
-`tsc --noEmit`, then writes the production site to `dist/`. `npm run preview` serves
-the built `dist/` folder locally.
-
-## Layout
-
-```
-index.html              landing page
-docs/index.html         introduction
-docs/<slug>/index.html  one directory per documentation page
-public/favicon.svg      static assets copied into the build
-src/main.ts             entry point, wires every module
-src/lib/                TypeScript modules (chrome, search, code, OS switch, reveal)
-src/styles/             design tokens and component styles
-vite.config.ts          multi-page build inputs and clean URL redirects
-```
-
-Pages use clean URLs — `docs/installation/index.html` is served as `/docs/installation/`.
-Visiting `/docs/installation` without the trailing slash issues a 301 redirect, which the
-Vite plugin in `vite.config.ts` handles for both `npm run dev` and `npm run preview`.
-A host with its own directory-index handling (nginx `try_files $uri $uri/`, Netlify,
-Vercel, GitHub Pages) will do the same without configuration.
-
-## Editing
-
-Page content lives in the HTML files under `docs/`. Shared navigation is defined once in
-`src/lib/nav.ts` and drives the sidebar, footer, search index and previous/next links.
-
-OS-specific instructions use `data-os-btn` buttons and `data-os` panels; the selected
-distribution is stored in `localStorage` under `oxlify-os` and follows the reader across
-every page. Theme preference is stored under `oxlify-theme`.
+GPL-3.0. See [LICENSE](LICENSE).
